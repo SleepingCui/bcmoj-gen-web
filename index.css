@@ -228,8 +228,6 @@
         .badge-success {
             background-color: var(--success-color);
         }
-
-        /* 响应式调整 */
         @media (max-width: 768px) {
             .card-body {
                 padding: 15px;
@@ -243,8 +241,6 @@
                 width: 100%;
             }
         }
-
-        /* 自定义滚动条 */
         .preview-area::-webkit-scrollbar {
             width: 8px;
         }
@@ -263,7 +259,6 @@
             background: var(--primary-color);
         }
 
-        /* 动画效果 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -273,7 +268,6 @@
             animation: fadeIn 0.5s ease forwards;
         }
 
-        /* 标签样式 */
         .config-tag {
             display: inline-block;
             background: #e9ecef;
@@ -285,7 +279,6 @@
             color: #495057;
         }
         
-        /* 预览卡片高度调整 */
         .preview-card {
             height: 100%;
         }
