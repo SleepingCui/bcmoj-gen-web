@@ -1,118 +1,64 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>题目JSON生成器</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="index.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>题目配置生成器</title>
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div class="app-container">
-        <div class="header fade-in">
-            <h1 class="app-title"><i class="fas fa-code-json"></i> 题目JSON生成器</h1>
-        </div>
-        
-        <div class="row">
-            <div class="col-lg-6">
-                <div class="card fade-in" style="animation-delay: 0.1s;">
-                    <div class="card-header">
-                        <i class="fas fa-cog"></i> 基本配置
-                    </div>
-                    <div class="card-body">
-                        <form id="configForm">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="timeLimit" class="form-label required-label">时间限制 (毫秒)</label>
-                                    <input type="number" class="form-control" id="timeLimit" min="1" value="1000" required>
-                                    <div class="form-text">程序运行的最大时间限制</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="compareMode" class="form-label">比较模式</label>
-                                    <select class="form-select" id="compareMode">
-                                        <option value="1">1: 严格模式 (STRICT)</option>
-                                        <option value="2">2: 忽略空格 (IGNORE_SPACES)</option>
-                                        <option value="3">3: 不区分大小写 (CASE_INSENSITIVE)</option>
-                                        <option value="4" selected>4: 浮点容错 (FLOAT_TOLERANT)</option>
-                                    </select>
-                                    <div class="form-text">输出结果的比较方式</div>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="securityCheck">
-                                        <label class="form-check-label" for="securityCheck">启用安全检测</label>
-                                    </div>
-                                    <div class="form-text">是否启用安全检测</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="enableO2" checked>
-                                        <label class="form-check-label" for="enableO2">启用O2优化</label>
-                                    </div>
-                                    <div class="form-text">是否启用O2优化</div>
-                                </div>
-                            </div>
+  <div class="container">
+    <h1>题目配置生成器</h1>
+    <form id="configForm">
+      <div class="form-group">
+        <label for="timeLimit">时间限制 (ms):</label>
+        <input type="number" id="timeLimit" name="timeLimit" min="1" required>
+      </div>
+      <div class="form-group">
+        <label for="memLimit">内存限制 (KB):</label>
+        <input type="number" id="memLimit" name="memLimit" min="1" required>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="securityCheck" name="securityCheck"> 安全检查
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="enableO2" name="enableO2"> 启用 O2 优化
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="compareMode">比较模式:</label>
+        <select id="compareMode" name="compareMode">
+          <option value="1">严格模式 (STRICT)</option>
+          <option value="2">忽略空格 (IGNORE_SPACES)</option>
+          <option value="3">忽略大小写 (CASE_INSENSITIVE)</option>
+          <option value="4">浮点容差 (FLOAT_TOLERANT)</option>
+        </select>
+      </div>
 
-                            <div class="mt-3">
-                                <span class="config-tag"><i class="fas fa-info-circle"></i> 至少需要一个测试点</span>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+      <h3>测试点配置</h3>
+      <div id="checkpointsContainer">
+      </div>
+      <button type="button" id="addCheckpointBtn">添加测试点</button>
 
-                <div class="card fade-in" style="animation-delay: 0.2s;">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-vial"></i> 测试点配置</span>
-                        <button type="button" class="btn btn-primary btn-sm" id="addTestCase">
-                            <i class="fas fa-plus"></i> 添加测试点
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div id="testCases">
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <button type="submit">生成 JSON</button>
+    </form>
 
-            <div class="col-lg-6">
-                <div class="card preview-card fade-in" style="animation-delay: 0.3s;">
-                    <div class="card-header">
-                        <i class="fas fa-eye"></i> JSON预览
-                    </div>
-                    <div class="card-body preview-container">
-                        <div class="preview-area" id="jsonPreview">
-                            {/* 预览内容将通过JS生成 */}
-                        </div>
-                        <div class="action-buttons mt-3">
-                            <button class="btn btn-outline-secondary" id="copyJson">
-                                <i class="fas fa-copy"></i> 复制JSON
-                            </button>
-                            <button class="btn btn-success" id="downloadJson">
-                                <i class="fas fa-download"></i> 下载JSON文件
-                            </button>
-                            <button class="btn btn-danger" id="resetForm">
-                                <i class="fas fa-trash"></i> 重置表单
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer fade-in text-center" style="animation-delay: 0.5s; font-family: monospace;">
-    Copyright © 2025 SleepingCui | 
-    <a href="https://github.com/SleepingCui/BCMOJ" target="_blank">BCMOJ</a> | 
-    <a href="https://github.com/SleepingCui/bcmoj-gen-web" target="_blank">Website</a>
-</div>
-
+    <div id="output"></div>
+    
+    <div class="button-group" id="buttonGroup">
+      <button id="downloadBtn">下载 JSON</button>
+      <button id="copyBtn">复制 JSON</button>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="index.js"></script>
+  <footer>
+    By MxingFoew1034 & SleepingCui for BCMOJ 1.0.12-beta+
+    <a href="https://github.com/SleepingCui/bcmoj-gen-web" target="_blank">Website source</a>
+    <a href="https://github.com/SleepingCui/BCMOJ" target="_blank">BCMOJ</a>
+  </footer>
+<script src="index.js"></script>
 </body>
 </html>

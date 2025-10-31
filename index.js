@@ -1,137 +1,100 @@
-        let testCaseCount = 0;
-        function addTestCase() {
-            testCaseCount++;
-            const testCaseHTML = `
-                <div class="test-case" id="testCase-${testCaseCount}">
-                    <div class="test-case-header">
-                        <div class="test-case-title">
-                            <i class="fas fa-vial"></i> 测试点 #${testCaseCount}
-                        </div>
-                        <button type="button" class="btn btn-sm btn-danger remove-test-case" data-id="${testCaseCount}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
-                            <label for="input-${testCaseCount}" class="form-label required-label">输入</label>
-                            <textarea class="form-control test-input" id="input-${testCaseCount}" rows="3" placeholder="输入测试数据..." required></textarea>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <label for="output-${testCaseCount}" class="form-label required-label">输出</label>
-                            <textarea class="form-control test-output" id="output-${testCaseCount}" rows="3" placeholder="预期输出..." required></textarea>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('testCases').insertAdjacentHTML('beforeend', testCaseHTML);
-            document.querySelectorAll('.remove-test-case').forEach(button => {
-                button.onclick = function() {
-                    const id = this.getAttribute('data-id');
-                    document.getElementById(`testCase-${id}`).remove();
-                    updateJsonPreview();
-                };
-            });
-            document.querySelectorAll('.test-input, .test-output').forEach(element => {
-                element.addEventListener('input', updateJsonPreview);
-            });
-            
-            updateJsonPreview();
-        }
-        function updateJsonPreview() {
-            const timeLimit = document.getElementById('timeLimit').value;
-            const securityCheck = document.getElementById('securityCheck').checked;
-            const enableO2 = document.getElementById('enableO2').checked;
-            const compareMode = document.getElementById('compareMode').value;
-            const checkpoints = {};
-            document.querySelectorAll('.test-case').forEach(testCase => {
-                const id = testCase.id.split('-')[1];
-                const input = document.getElementById(`input-${id}`).value;
-                const output = document.getElementById(`output-${id}`).value;
-                
-                if (input.trim() && output.trim()) {
-                    checkpoints[`${id}_in`] = input;
-                    checkpoints[`${id}_out`] = output;
-                }
-            });
+document.addEventListener('DOMContentLoaded', function() {
+      const container = document.getElementById('checkpointsContainer');
+      const addBtn = document.getElementById('addCheckpointBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const copyBtn = document.getElementById('copyBtn');
+      const outputDiv = document.getElementById('output');
+      const buttonGroup = document.getElementById('buttonGroup');
+      let checkpointCounter = 1;
+      function addCheckpoint() {
+        const row = document.createElement('div');
+        row.className = 'checkpoint-row';
+        row.innerHTML = `
+          <input type="number" placeholder="测试点编号" min="1" step="1" class="checkpoint-number" value="${checkpointCounter}">
+          <input type="text" placeholder="输入样例" class="input-file">
+          <input type="text" placeholder="输出样例" class="output-file">
+          <button type="button" class="remove-btn">删除</button>
+        `;
+        container.appendChild(row);
+        checkpointCounter++;
+      }
 
-            const jsonData = {
-                timeLimit: timeLimit ? parseInt(timeLimit) : 1000,
-                securityCheck: securityCheck,
-                enableO2: enableO2,
-                compareMode: parseInt(compareMode),
-                checkpoints: checkpoints
-            };
-            const jsonString = JSON.stringify(jsonData, null, 2);
-            const highlightedJson = highlightJson(jsonString);
-            document.getElementById('jsonPreview').innerHTML = highlightedJson;
+      addBtn.addEventListener('click', addCheckpoint);
+      container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-btn')) {
+          e.target.parentElement.remove();
         }
-        function highlightJson(json) {
-            return json
-                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
-                    let cls = 'json-number';
-                    if (/^"/.test(match)) {
-                        if (/:$/.test(match)) {
-                            cls = 'json-key';
-                        } else {
-                            cls = 'json-string';
-                        }
-                    } else if (/true|false/.test(match)) {
-                        cls = 'json-boolean';
-                    } else if (/null/.test(match)) {
-                        cls = 'json-null';
-                    }
-                    return '<span class="' + cls + '">' + match + '</span>';
-                });
+      });
+
+      function generateRandomString(length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        function copyJsonToClipboard() {
-            const jsonText = document.getElementById('jsonPreview').textContent;
-            navigator.clipboard.writeText(jsonText).then(() => {
-                const copyButton = document.getElementById('copyJson');
-                const originalText = copyButton.innerHTML;
-                copyButton.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                copyButton.classList.add('btn-success');
-                copyButton.classList.remove('btn-outline-secondary');
-                
-                setTimeout(() => {
-                    copyButton.innerHTML = originalText;
-                    copyButton.classList.remove('btn-success');
-                    copyButton.classList.add('btn-outline-secondary');
-                }, 2000);
-            });
+        return result;
+      }
+
+      document.getElementById('configForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const config = {
+          timeLimit: parseInt(document.getElementById('timeLimit').value),
+          memLimit: parseInt(document.getElementById('memLimit').value),
+          securityCheck: document.getElementById('securityCheck').checked,
+        };
+
+        if (document.getElementById('enableO2').checked) {
+          config.enableO2 = true;
         }
-        function downloadJsonFile() {
-            const jsonText = document.getElementById('jsonPreview').textContent;
-            const blob = new Blob([jsonText], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'problem_config.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+
+        const compareMode = parseInt(document.getElementById('compareMode').value);
+        if (compareMode !== 1) {
+          config.compareMode = compareMode;
         }
-        function resetForm() {
-            if (confirm('确定要重置表单吗？所有输入数据将被清除。')) {
-                document.getElementById('configForm').reset();
-                document.getElementById('testCases').innerHTML = '';
-                testCaseCount = 0;
-                addTestCase();
-                updateJsonPreview();
+        config.checkpoints = {};
+        const checkpointRows = container.querySelectorAll('.checkpoint-row');
+        for (let i = 0; i < checkpointRows.length; i++) {
+            const row = checkpointRows[i];
+            const numInput = row.querySelector('.checkpoint-number');
+            const inInput = row.querySelector('.input-file');
+            const outInput = row.querySelector('.output-file');
+            const num = numInput.value.trim();
+            const inVal = inInput.value.trim();
+            const outVal = outInput.value.trim();
+
+            if (num && inVal) {
+                config.checkpoints[`${num}_in`] = inVal;
+            }
+            if (num && outVal) {
+                config.checkpoints[`${num}_out`] = outVal;
             }
         }
-    
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('addTestCase').addEventListener('click', addTestCase);
-            addTestCase();
-            document.getElementById('timeLimit').addEventListener('input', updateJsonPreview);
-            document.getElementById('securityCheck').addEventListener('change', updateJsonPreview);
-            document.getElementById('enableO2').addEventListener('change', updateJsonPreview);
-            document.getElementById('compareMode').addEventListener('change', updateJsonPreview);
-            document.getElementById('copyJson').addEventListener('click', copyJsonToClipboard);
-            document.getElementById('downloadJson').addEventListener('click', downloadJsonFile);
-            document.getElementById('resetForm').addEventListener('click', resetForm);
-            updateJsonPreview();
+
+        const jsonString = JSON.stringify(config, null, 2);
+        outputDiv.textContent = jsonString;
+        buttonGroup.style.display = 'block';
+      });
+
+      downloadBtn.addEventListener('click', function() {
+        if (!outputDiv.textContent) return;
+        const now = new Date();
+        const dateStr = now.getFullYear() +String(now.getMonth() + 1).padStart(2, '0') +String(now.getDate()).padStart(2, '0');
+        const randomStr = generateRandomString(6);
+        const filename = `problem_${dateStr}_${randomStr}.json`;
+        const blob = new Blob([outputDiv.textContent], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      copyBtn.addEventListener('click', function() {
+        if (!outputDiv.textContent) return;
+        navigator.clipboard.writeText(outputDiv.textContent).then(() => {
+          alert('JSON 已复制到剪贴板');
         });
+      });
+      addCheckpoint();
+    });
